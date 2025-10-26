@@ -1,22 +1,137 @@
-Given an array of integers, find the maximum sum of any contiguous subarray.
-
-Input Format:
-- First line: n (size of array)
-- Second line: n space-separated integers
-
-Output Format:
-- Single integer: maximum subarray sum
-
-Constraints:
-- 1 <= n <= 10^5
-- -10^4 <= array[i] <= 10^4
-
-Example:
-Input:
+This problem shares similarities with chapter 2. Here in chapter 1, the ground cannot be used.
+Solid Snake is back at work scaling Metal Platforms! This time, he is bringing his own ladder.
+Solid Snake needs to inspect 
+N
+N platforms, numbered 
+1
+1 to 
+N
+N. The 
+i
+i-th platform is a horizontal line segment from points 
+(
+i
+,
+A
+i
+)
+(i,A 
+i
+​
+ ) to 
+(
+i
++
+1
+,
+A
+i
+)
+(i+1,A 
+i
+​
+ ), inclusive. Solid Snake starts on platform 
+1
+1. He can travel between two platforms with a ladder of height 
+h
+h or greater if there exists a vertical line segment of length 
+h
+h that intersects both platforms.
+Metal Platforms Inc. has tasked you to write a program, "Scale AI", to find the length of the shortest ladder that Solid Snake needs to visit each platform at least once, starting from platform 
+1
+1.
+Constraints
+1
+≤
+T
+≤
+65
+1≤T≤65
+1
+≤
+N
+≤
+100
+1≤N≤100
+1
+≤
+A
+i
+≤
+100
+1≤A 
+i
+​
+ ≤100
+Input Format
+Input begins with a single integer 
+T
+T, the number of test cases. The first line of each case is a single integer 
+N
+N. The second line of each case contains 
+N
+N space-separated integers 
+A
+1
+,
+.
+.
+.
+,
+A
+N
+A 
+1
+​
+ ,...,A 
+N
+​
+ .
+Output Format
+For the 
+i
+i-th test case, print "Case #i: " followed by the length of the shortest ladder that Solid Snake needs to visit each platform at least once.
+Sample Explanation
+In the first sample case, there are 
+N
+=
 5
--2 1 -3 4 -1
-
-Output:
+N=5 platforms with heights 
+A
+=
+[
+2
+,
 4
+,
+5
+,
+1
+,
+4
+]
+A=[2,4,5,1,4] respectively. To be able to access all the platforms, Solid Snake needs a ladder of at least height 
+4
+4, with potential placements shown below.
 
-Explanation: The subarray [4] has the maximum sum of 4.
+Sample Input
+6
+5
+2 4 5 1 4
+3
+13 10 11
+4
+1 3 3 7
+1
+42
+3
+5 50 42
+7
+4 2 5 6 4 2 1
+Sample Output
+Case #1: 4
+Case #2: 3
+Case #3: 4
+Case #4: 0
+Case #5: 45
+Case #6: 3

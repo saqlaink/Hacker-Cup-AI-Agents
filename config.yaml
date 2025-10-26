@@ -4,7 +4,7 @@
 api_keys:
   # Google Gemini API Key - FREE TIER AVAILABLE!
   # Get yours at: https://aistudio.google.com/app/apikey
-  google: ""
+  google: "AIzaSyAygVqJesC_1ctwOzP7PODQh-8rH_m_DAk"
 
 # Model Configuration for Each Agent
 # FORMAT: "google:model-name"
@@ -16,19 +16,19 @@ api_keys:
 #   - "google:gemini-2.5-flash-lite"    # Fast & Cheap (1000 free requests / day) - good for testing
 #
 models:
-  tester_agent: "google:gemini-2.5-flash"    
-  brute_agent: "google:gemini-2.5-flash"     
-  optimal_agent: "google:gemini-2.5-flash"   
+  tester_agent: "google:gemini-2.5-flash"
+  brute_agent: "google:gemini-2.5-flash"
+  optimal_agent: "google:gemini-2.5-flash"
 
 # Execution Parameters
 execution:
   max_optimal_attempts: 5
-  timeout_seconds: 30  # Timeout for code execution
+  timeout_seconds: 30 # Timeout for code execution
 
 # Output Configuration
 output:
   workspace_dir: "./workspace"
-  preserve_intermediate: true  # Keep all generated files
+  preserve_intermediate: true # Keep all generated files
 
 # File Names
 files:
