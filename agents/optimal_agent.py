@@ -32,6 +32,10 @@ Guidelines:
 - No unnecessary comments or explanations in code
 - Make sure the solution is complete and runnable
 
+CRITICAL REQUIREMENT: Your response MUST contain ONLY valid, runnable Python code.
+Do NOT include any surrounding text, explanations, comments, markdown formatting like ```python, or any sentences introducing the code.
+Start your response immediately with `import sys` or the first necessary line of Python code.
+
 Output ONLY the Python code, no markdown, no explanations.
 """
 

@@ -26,6 +26,8 @@ Guidelines:
 - Don't worry about time/space complexity
 - Read input from stdin, write output to stdout
 - Handle the exact input/output format specified
+- IMPORTANT: Use .strip() when reading lines to handle extra whitespace/newlines
+- Skip empty lines when reading input
 - Include proper input parsing
 - No unnecessary comments or explanations in code
 - Make sure the solution is complete and runnable

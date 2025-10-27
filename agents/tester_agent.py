@@ -26,18 +26,26 @@ Guidelines:
 - Use small values (arrays of size 2-5, numbers < 100, etc.)
 - Cover edge cases (empty, single element, boundary values)
 - Output ONLY the test input, nothing else - NO markdown, NO code blocks, NO explanations
-- Each test case should be separated by a blank line if multiple cases
+- DO NOT add blank lines between test cases unless the problem format requires it
 - DO NOT wrap output in ``` markers or any other formatting
+- Each line should contain exactly what the problem specifies (no extra whitespace)
 
-Example format for multiple test cases:
+CRITICAL RULES:
+1. The FIRST line must be T (the number of test cases)
+2. After T, immediately provide the test cases WITHOUT blank lines in between
+3. Format each test case exactly as shown in the problem's input format
+4. NO blank lines unless explicitly required by the problem format
+5. Output ONLY the raw test input data, nothing else!
+
+
+Example for a problem with format "T / N / A1 A2 ... AN":
 3
-1 2 3
-
-2
-5 10
-
-1
-42
+5
+2 4 5 1 4
+3
+13 10 11
+4
+1 3 3 7
 
 CRITICAL: Output ONLY the raw test input data above, nothing else!
 """
