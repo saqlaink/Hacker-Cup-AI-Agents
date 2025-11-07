@@ -19,6 +19,7 @@ models:
   tester_agent: "google:gemini-2.5-flash"
   brute_agent: "google:gemini-2.5-flash"
   optimal_agent: "google:gemini-2.5-flash"
+  debugger_agent: "google:gemini-2.5-flash"  # Agent for debugging failed solutions
 
 # Execution Parameters
 execution:

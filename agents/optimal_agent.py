@@ -1,5 +1,9 @@
 from langchain_google_genai import ChatGoogleGenerativeAI
 from typing import Optional
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from utils.validator import CodeValidator
 
 
 class OptimalAgent:
@@ -16,48 +20,112 @@ class OptimalAgent:
         if model.startswith("models/"):
             model = model.replace("models/", "")
 
-        self.model = ChatGoogleGenerativeAI(model=model, temperature=0.3)
+        self.model = ChatGoogleGenerativeAI(model=model, temperature=0.2)
         self.system_prompt = """You are an expert competitive programmer.
 
-Your task is to generate an EFFICIENT solution in Python that meets the time/space constraints.
+Generate COMPLETE, EFFICIENT Python solutions. Maximum 80 lines.
 
-Guidelines:
-- Optimize for the given constraints in the problem
-- Use efficient algorithms and data structures
-- Aim for optimal time and space complexity
-- Read input from stdin, write output to stdout
-- Handle the exact input/output format specified
-- Include proper input parsing
-- The solution must be CORRECT (passing all test cases)
-- No unnecessary comments or explanations in code
-- Make sure the solution is complete and runnable
+CRITICAL RULES:
+1. MINIMAL COMMENTS (maximum 3 lines)
+2. Code must be COMPLETE and RUNNABLE
+3. Must have main execution block
+4. Optimize for time/space complexity
+5. Read from stdin, print to stdout
+6. Clean, concise code
 
-CRITICAL REQUIREMENT: Your response MUST contain ONLY valid, runnable Python code.
-Do NOT include any surrounding text, explanations, comments, markdown formatting like ```python, or any sentences introducing the code.
-Start your response immediately with `import sys` or the first necessary line of Python code.
+REQUIRED STRUCTURE:
+```
+def solve():
+    # read input
+    # compute answer efficiently
+    return result
 
-Output ONLY the Python code, no markdown, no explanations.
-"""
+T = int(input())
+for _ in range(T):
+    print(solve())
+```
+
+ABSOLUTELY FORBIDDEN:
+- Excessive comments
+- Explanatory text
+- Pseudocode
+- Incomplete code
+
+RESPOND WITH CODE ONLY. MINIMAL COMMENTS. COMPLETE SOLUTIONS."""
 
     def generate_solution(self, problem_statement: str, feedback: Optional[str] = None, attempt: int = 1) -> str:
         """Generate optimal solution for the given problem."""
-        user_message = f"Generate an optimal Python solution for this problem:\n\n{problem_statement}"
+        
+        max_retries = 2
+        validator = CodeValidator()
+        
+        for retry in range(max_retries):
+            user_message = f"""Problem: {problem_statement}
 
-        if feedback:
-            user_message += f"\n\n=== FEEDBACK FROM ATTEMPT {attempt - 1} ===\n{feedback}\n\nPlease fix the issues and generate a corrected solution."
+Generate COMPLETE optimal Python code. MINIMAL COMMENTS (max 3 lines). Maximum 80 lines."""
 
-        messages = [
-            {"role": "system", "content": self.system_prompt},
-            {"role": "user", "content": user_message}
-        ]
+            if feedback:
+                user_message += f"""
 
-        response = self.model.invoke(messages)
-        code = response.content.strip()
+FEEDBACK (attempt {attempt - 1}):
+{feedback[:1000]}
 
-        # Remove markdown code blocks if present
-        if code.startswith("```python"):
-            code = code.split("```python")[1].split("```")[0].strip()
-        elif code.startswith("```"):
-            code = code.split("```")[1].split("```")[0].strip()
+Fix the bug. Generate COMPLETE corrected code."""
 
+            if retry > 0:
+                user_message += f"""
+
+RETRY {retry + 1}/{max_retries}: Code was INCOMPLETE or too verbose.
+Generate CONCISE, COMPLETE code."""
+
+            messages = [
+                {"role": "system", "content": self.system_prompt},
+                {"role": "user", "content": user_message}
+            ]
+
+            response = self.model.invoke(
+                messages,
+                max_tokens=3000  # Reasonable limit for optimal solutions
+            )
+            code = response.content.strip()
+
+            # Remove markdown
+            if code.startswith("```python"):
+                code = code.split("```python")[1].split("```")[0].strip()
+            elif code.startswith("```"):
+                code = code.split("```")[1].split("```")[0].strip()
+
+            # Remove excessive comments
+            code_lines = code.split('\n')
+            cleaned_lines = []
+            comment_count = 0
+            
+            for line in code_lines:
+                stripped = line.strip()
+                if stripped.startswith('#'):
+                    comment_count += 1
+                    if comment_count <= 5:  # Allow max 5 comment lines for optimal
+                        cleaned_lines.append(line)
+                else:
+                    cleaned_lines.append(line)
+            
+            code = '\n'.join(cleaned_lines)
+            
+            # Check line count
+            if len(code_lines) > 150:
+                print(f"  ⚠️  Generated code too long ({len(code_lines)} lines) - retry {retry + 1}/{max_retries}")
+                continue
+
+            # Validate
+            is_valid, error_msg = validator.is_complete(code)
+            
+            if is_valid:
+                print(f"  ✓ Generated optimal solution ({len(code_lines)} lines)")
+                return code
+            else:
+                print(f"  ⚠️  Validation failed (retry {retry + 1}/{max_retries}): {error_msg}")
+                if retry < max_retries - 1:
+                    print(f"  → Retrying...")
+        
+        print(f"  ⚠️  Using last generated code after {max_retries} retries")
         return code

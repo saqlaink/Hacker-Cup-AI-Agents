@@ -3,7 +3,7 @@ import yaml
 import json
 import time
 from typing import Dict, Optional, Tuple, List
-from agents import TesterAgent, BruteAgent, OptimalAgent
+from agents import TesterAgent, BruteAgent, OptimalAgent, DebuggerAgent
 from utils import CodeExecutor, OutputComparator, ProgressIndicator
 
 
@@ -27,6 +27,8 @@ class ProblemSolverOrchestrator:
         self.tester_agent = TesterAgent(self.config['models']['tester_agent'])
         self.brute_agent = BruteAgent(self.config['models']['brute_agent'])
         self.optimal_agent = OptimalAgent(self.config['models']['optimal_agent'])
+        self.debugger_agent = DebuggerAgent(self.config['models'].get('debugger_agent', 
+                                                                       self.config['models']['optimal_agent']))
 
         # Initialize utilities
         timeout = self.config['execution']['timeout_seconds']
@@ -222,11 +224,86 @@ class ProblemSolverOrchestrator:
                 )
                 print(f"✗ Outputs don't match")
                 print(f"Difference: {diff[:200]}...")
+                
+                # Use debugger agent to add instrumentation and analyze
+                print(f"\n🔍 Running debug analysis...")
+                
+                try:
+                    # Read test input and expected output
+                    with open(self.files['test_inputs'], 'r') as f:
+                        test_input = f.read()
+                    with open(self.files['brute_outputs'], 'r') as f:
+                        expected_output = f.read()
+                    with open(attempt_output_file, 'r') as f:
+                        actual_output = f.read()
+                    
+                    # Add debug instrumentation
+                    with ProgressIndicator("Adding debug instrumentation"):
+                        debug_code = self.debugger_agent.add_debug_instrumentation(
+                            optimal_code,
+                            test_input,
+                            expected_output,
+                            actual_output,
+                            diff
+                        )
+                    print("✓ Debug instrumentation added")
+                    
+                    # Save and execute debug version
+                    debug_file = os.path.join(self.workspace, f'optimal_attempt_{attempt}_debug.py')
+                    debug_output_file = os.path.join(self.workspace, f'optimal_attempt_{attempt}_debug_output.txt')
+                    
+                    with open(debug_file, 'w') as f:
+                        f.write(debug_code)
+                    print(f"✓ Saved instrumented code to: {os.path.basename(debug_file)}")
+                    
+                    # Execute with debug output
+                    with ProgressIndicator("Executing instrumented code"):
+                        debug_result = self.executor.execute_with_debug(
+                            debug_file,
+                            self.files['test_inputs'],
+                            debug_output_file
+                        )
+                    
+                    if debug_result['success'] and debug_result['stderr']:
+                        print(f"✓ Execution successful")
+                        print(f"✓ Debug output captured ({len(debug_result['stderr'])} chars)")
+                        
+                        # Analyze debug output
+                        with ProgressIndicator("Analyzing debug trace"):
+                            analysis = self.debugger_agent.analyze_debug_output(
+                                debug_result['stderr'],
+                                expected_output,
+                                actual_output
+                            )
+                        
+                        print(f"\n💡 Debug Analysis:")
+                        print(f"   {analysis}\n")
+                        
+                        # Enhanced feedback with debug analysis
+                        feedback = f"""Your solution produced incorrect output.
+
+DIFF:
+{diff}
+
+DEBUG ANALYSIS:
+{analysis}
+
+DEBUG OUTPUT (first 500 chars):
+{debug_result['stderr'][:500]}
+
+Please fix the logic based on this analysis."""
+                    else:
+                        print(f"⚠️  Debug execution failed or no debug output captured")
+                        feedback = f"Your solution produced incorrect output:\n{diff}\n\nPlease fix the logic."
+                        
+                except Exception as e:
+                    print(f"✗ Debug analysis failed: {str(e)}")
+                    feedback = f"Your solution produced incorrect output:\n{diff}\n\nPlease fix the logic."
+                
                 attempt_data['verdict'] = 'Wrong Answer'
                 attempt_data['output_match'] = False
                 attempt_data['output_diff'] = diff
                 metadata['optimal_attempts'].append(attempt_data)
-                feedback = f"Your solution produced incorrect output:\n{diff}\n\nPlease fix the logic."
                 metadata['errors'].append(f"Attempt {attempt}: Output mismatch")
 
         print("\n" + "=" * 80)
