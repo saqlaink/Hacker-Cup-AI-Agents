@@ -11,6 +11,7 @@ This system uses three specialized agents to solve programming problems:
 
 import sys
 import io
+import argparse
 from orchestrator import ProblemSolverOrchestrator
 
 # Ensure UTF-8 encoding for Windows console
@@ -19,8 +20,37 @@ sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8')
 
 
 def main():
+    # Parse command-line arguments
+    parser = argparse.ArgumentParser(
+        description='Multi-Agent Programming Problem Solver',
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+  # Use auto-generated test cases (default)
+  python main.py
+
+  # Use custom test input file
+  python main.py --custom-test my_tests.txt
+
+  # Use custom problem file and custom tests
+  python main.py --problem hard_problem.txt --custom-test hard_tests.txt
+        """
+    )
+    parser.add_argument(
+        '--problem', '-p',
+        default='PROBLEM.txt',
+        help='Path to problem statement file (default: PROBLEM.txt)'
+    )
+    parser.add_argument(
+        '--custom-test', '-t',
+        default=None,
+        help='Path to custom test input file (overrides config and auto-generation)'
+    )
+    
+    args = parser.parse_args()
+
     # Read problem statement from file
-    problem_file = "PROBLEM.txt"
+    problem_file = args.problem
 
     try:
         with open(problem_file, 'r', encoding='utf-8') as f:
@@ -33,11 +63,20 @@ def main():
     print("Multi-Agent Programming Problem Solver")
     print("=" * 80)
     print(f"\nProblem loaded from: {problem_file}")
+    
+    # Show custom test info if provided
+    if args.custom_test:
+        print(f"Custom test input: {args.custom_test}")
+    
     print("\n" + problem_statement)
     print("\n")
 
     # Initialize orchestrator
     orchestrator = ProblemSolverOrchestrator()
+    
+    # Override config with CLI argument if provided
+    if args.custom_test:
+        orchestrator.config['execution']['custom_test_input'] = args.custom_test
 
     # Solve the problem
     success, optimal_code, metadata = orchestrator.solve(problem_statement)
@@ -48,6 +87,7 @@ def main():
     print("=" * 80)
     print(f"Success: {success}")
     print(f"Attempts used: {metadata['attempts']}/{orchestrator.max_attempts}")
+    print(f"Custom test used: {metadata.get('custom_test_used', False)}")
     print(f"Test cases generated: {metadata['test_cases_generated']}")
     print(f"Brute force generated: {metadata['brute_force_generated']}")
     print(f"Brute force executed: {metadata['brute_force_executed']}")

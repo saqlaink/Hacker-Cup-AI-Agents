@@ -71,40 +71,77 @@ class ProblemSolverOrchestrator:
             'brute_force_executed': False,
             'optimal_solution_found': False,
             'errors': [],
-            'optimal_attempts': []  # Store all attempts with details
+            'optimal_attempts': [],  # Store all attempts with details
+            'custom_test_used': False
         }
 
-        print("=" * 80)
-        print("STEP 1: Generating test cases...")
-        print("=" * 80)
-
-        try:
-            with ProgressIndicator("Generating small + adversarial test cases with TesterAgent"):
-                # Prefer combined generation if available
-                if hasattr(self.tester_agent, 'generate_combined_test_cases'):
-                    test_cases = self.tester_agent.generate_combined_test_cases(problem_statement)
-                else:
-                    test_cases = self.tester_agent.generate_test_cases(problem_statement)
-
-            # Write to input file
-            with open(self.files['test_inputs'], 'w') as f:
-                f.write(test_cases)
-
-            # Attempt to parse T for logging
+        # Check for custom test input
+        custom_test_path = self.config.get('execution', {}).get('custom_test_input')
+        
+        if custom_test_path and os.path.exists(custom_test_path):
+            # Use custom test input
+            print("=" * 80)
+            print("STEP 1: Using custom test input...")
+            print("=" * 80)
+            
             try:
-                first_line = test_cases.splitlines()[0].strip()
-                t_count = int(first_line)
-                print(f"✓ Generated {t_count} test cases (small + adversarial)")
-            except Exception:
-                print("✓ Generated test cases (could not parse T header)")
+                # Read custom test input
+                with open(custom_test_path, 'r', encoding='utf-8') as f:
+                    test_cases = f.read()
+                
+                # Write to workspace
+                with open(self.files['test_inputs'], 'w', encoding='utf-8') as f:
+                    f.write(test_cases)
+                
+                # Parse T for logging
+                try:
+                    first_line = test_cases.splitlines()[0].strip()
+                    t_count = int(first_line)
+                    print(f"✓ Loaded {t_count} custom test cases from: {custom_test_path}")
+                except Exception:
+                    print(f"✓ Loaded custom test cases from: {custom_test_path}")
+                
+                metadata['test_cases_generated'] = True
+                metadata['custom_test_used'] = True
+                print(f"✓ Test cases copied to: {self.files['test_inputs']}\n")
+            except Exception as e:
+                error = f"Failed to load custom test input: {str(e)}"
+                metadata['errors'].append(error)
+                print(f"✗ {error}\n")
+                return False, None, metadata
+        else:
+            # Auto-generate test cases with TesterAgent
+            print("=" * 80)
+            print("STEP 1: Generating test cases...")
+            print("=" * 80)
 
-            metadata['test_cases_generated'] = True
-            print(f"✓ Test cases saved to: {self.files['test_inputs']}\n")
-        except Exception as e:
-            error = f"Failed to generate test cases: {str(e)}"
-            metadata['errors'].append(error)
-            print(f"✗ {error}\n")
-            return False, None, metadata
+            try:
+                with ProgressIndicator("Generating small + adversarial test cases with TesterAgent"):
+                    # Prefer combined generation if available
+                    if hasattr(self.tester_agent, 'generate_combined_test_cases'):
+                        test_cases = self.tester_agent.generate_combined_test_cases(problem_statement)
+                    else:
+                        test_cases = self.tester_agent.generate_test_cases(problem_statement)
+
+                # Write to input file
+                with open(self.files['test_inputs'], 'w') as f:
+                    f.write(test_cases)
+
+                # Attempt to parse T for logging
+                try:
+                    first_line = test_cases.splitlines()[0].strip()
+                    t_count = int(first_line)
+                    print(f"✓ Generated {t_count} test cases (small + adversarial)")
+                except Exception:
+                    print("✓ Generated test cases (could not parse T header)")
+
+                metadata['test_cases_generated'] = True
+                print(f"✓ Test cases saved to: {self.files['test_inputs']}\n")
+            except Exception as e:
+                error = f"Failed to generate test cases: {str(e)}"
+                metadata['errors'].append(error)
+                print(f"✗ {error}\n")
+                return False, None, metadata
 
         print("=" * 80)
         print("STEP 2: Generating brute force solution...")

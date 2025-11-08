@@ -1,68 +1,76 @@
 import sys
 
-def solve_case(case_num):
-    N = int(sys.stdin.readline())
-    S = sys.stdin.readline().strip()
+def solve():
+    N = int(input())
+    S = input()
 
-    print(f"DEBUG: Case #{case_num}: Input N = {N}, S = '{S}'", file=sys.stderr)
+    print(f"DEBUG: N = {N}, S = '{S}'", file=sys.stderr)
 
-    # Calculate prefix sums for 'A' and 'B'
-    prefix_A = [0] * (N + 1)
-    prefix_B = [0] * (N + 1)
-    print(f"DEBUG: Initial prefix_A array (size {N+1}): {prefix_A}", file=sys.stderr)
-    print(f"DEBUG: Initial prefix_B array (size {N+1}): {prefix_B}", file=sys.stderr)
-
+    first_A = -1
+    print(f"DEBUG: Searching for first 'A'...", file=sys.stderr)
     for i in range(N):
-        char_is_A = (1 if S[i] == 'A' else 0)
-        char_is_B = (1 if S[i] == 'B' else 0)
-        
-        prefix_A[i+1] = prefix_A[i] + char_is_A
-        prefix_B[i+1] = prefix_B[i] + char_is_B
-        
-        print(f"DEBUG: Prefix sum loop iteration i={i}", file=sys.stderr)
-        print(f"DEBUG:   S[{i}] = '{S[i]}'", file=sys.stderr)
-        print(f"DEBUG:   prefix_A[{i+1}] updated to {prefix_A[i+1]} (from {prefix_A[i]} + {char_is_A})", file=sys.stderr)
-        print(f"DEBUG:   prefix_B[{i+1}] updated to {prefix_B[i+1]} (from {prefix_B[i]} + {char_is_B})", file=sys.stderr)
+        print(f"DEBUG:   first_A loop i = {i}, S[i] = '{S[i]}'", file=sys.stderr)
+        if S[i] == 'A':
+            first_A = i
+            print(f"DEBUG:   Found first 'A' at index {first_A}", file=sys.stderr)
+            break
+    print(f"DEBUG: Final first_A = {first_A}", file=sys.stderr)
 
-    print(f"DEBUG: Final prefix_A array: {prefix_A}", file=sys.stderr)
-    print(f"DEBUG: Final prefix_B array: {prefix_B}", file=sys.stderr)
+    last_B = -1
+    print(f"DEBUG: Searching for last 'B'...", file=sys.stderr)
+    for i in range(N - 1, -1, -1):
+        print(f"DEBUG:   last_B loop i = {i}, S[i] = '{S[i]}'", file=sys.stderr)
+        if S[i] == 'B':
+            last_B = i
+            print(f"DEBUG:   Found last 'B' at index {last_B}", file=sys.stderr)
+            break
+    print(f"DEBUG: Final last_B = {last_B}", file=sys.stderr)
 
-    # The original code had many commented-out thoughts about DP states but no actual game logic
-    # or a statement to print the final answer to stdout.
-    # To make the "failing solution" produce *any* output and allow debugging,
-    # a placeholder logic for determining the winner is added based on one of the commented interpretations,
-    # and the final result is printed to stdout. This is a minimal change to enable output.
-
-    # Placeholder for actual game logic and result determination
-    # Based on the commented rules:
-    # Alice wins if `count_A > count_B`.
-    # Bob wins if `count_B >= count_A`.
+    if first_A == -1:  # No 'A's for Alice
+        print(f"DEBUG: Branch: No 'A's found (first_A == -1)", file=sys.stderr)
+        count_B = S.count('B')
+        print(f"DEBUG:   S.count('B') = {count_B}", file=sys.stderr)
+        # Alice skips. Bob eats all 'B's.
+        # Total moves = count of 'B's.
+        # Alice wins if total moves is odd.
+        result = "Alice" if count_B % 2 == 1 else "Bob"
+        print(f"DEBUG:   Calculated result = {result}", file=sys.stderr)
+        return result
     
-    total_A_count = prefix_A[N]
-    total_B_count = prefix_B[N]
+    if last_B == -1:  # No 'B's for Bob
+        print(f"DEBUG: Branch: No 'B's found (last_B == -1)", file=sys.stderr)
+        count_A = S.count('A')
+        print(f"DEBUG:   S.count('A') = {count_A}", file=sys.stderr)
+        # Bob skips. Alice eats all 'A's.
+        # Total moves = count of 'A's.
+        result = "Alice" if count_A % 2 == 1 else "Bob"
+        print(f"DEBUG:   Calculated result = {result}", file=sys.stderr)
+        return result
 
-    print(f"DEBUG: Placeholder logic: Total 'A's in string S = {total_A_count}", file=sys.stderr)
-    print(f"DEBUG: Placeholder logic: Total 'B's in string S = {total_B_count}", file=sys.stderr)
+    print(f"DEBUG: first_A = {first_A}, last_B = {last_B}", file=sys.stderr)
+    if first_A > last_B:
+        print(f"DEBUG: Branch: first_A ({first_A}) > last_B ({last_B})", file=sys.stderr)
+        count_A = S.count('A')
+        count_B = S.count('B')
+        total_moves = count_A + count_B
+        print(f"DEBUG:   S.count('A') = {count_A}, S.count('B') = {count_B}, total_moves = {total_moves}", file=sys.stderr)
+        result = "Alice" if total_moves % 2 == 1 else "Bob"
+        print(f"DEBUG:   Calculated result = {result}", file=sys.stderr)
+        return result
+    
+    print(f"DEBUG: Branch: Default case (first_A <= last_B)", file=sys.stderr)
+    count_A = S.count('A')
+    count_B = S.count('B')
+    total_moves = count_A + count_B
+    print(f"DEBUG:   S.count('A') = {count_A}, S.count('B') = {count_B}, total_moves = {total_moves}", file=sys.stderr)
+    result = "Alice" if total_moves % 2 == 1 else "Bob"
+    print(f"DEBUG:   Calculated result = {result}", file=sys.stderr)
+    return result
 
-    result_winner = ""
-    if total_A_count > total_B_count:
-        result_winner = "Alice"
-        print(f"DEBUG: Decision: {total_A_count} > {total_B_count}, Placeholder winner: Alice", file=sys.stderr)
-    else:
-        result_winner = "Bob"
-        print(f"DEBUG: Decision: {total_B_count} >= {total_A_count}, Placeholder winner: Bob", file=sys.stderr)
 
-    # This line is crucial for the solution to produce any output to stdout.
-    # The original code was missing any print statement for the final answer.
-    sys.stdout.write(f"Case #{case_num}: {result_winner}\n")
-    print(f"DEBUG: Outputted to stdout: Case #{case_num}: {result_winner}", file=sys.stderr)
-
-
-# Standard competitive programming boilerplate to handle multiple test cases.
-# The original code snippet was likely the content of a solve() function.
-T = int(sys.stdin.readline())
-print(f"DEBUG: Total number of test cases T = {T}", file=sys.stderr)
+T = int(input())
+print(f"DEBUG: Total test cases T = {T}", file=sys.stderr)
 for i in range(1, T + 1):
-    print(f"DEBUG: Starting processing for Case #{i}", file=sys.stderr)
-    solve_case(i)
-    print(f"DEBUG: Finished processing for Case #{i}\n", file=sys.stderr)
+    print(f"DEBUG: --- Starting Case #{i} ---", file=sys.stderr)
+    print(f"Case #{i}: {solve()}")
+    print(f"DEBUG: --- Finished Case #{i} ---", file=sys.stderr)

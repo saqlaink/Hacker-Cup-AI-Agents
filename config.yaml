@@ -27,6 +27,7 @@ models:
 execution:
   max_optimal_attempts: 5
   timeout_seconds: 30 # Timeout for code execution
+  custom_test_input: null  # Path to custom test input file (null to auto-generate with TesterAgent)
 
 # Output Configuration
 output:

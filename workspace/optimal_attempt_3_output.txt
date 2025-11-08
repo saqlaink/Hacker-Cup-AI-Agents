@@ -1,5 +1,0 @@
-Case #1: Alice
-Case #2: Alice
-Case #3: Bob
-Case #4: Bob
-Case #5: Alice
