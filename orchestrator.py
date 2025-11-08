@@ -75,10 +75,25 @@ class ProblemSolverOrchestrator:
         print("=" * 80)
 
         try:
-            with ProgressIndicator("Generating test cases with TesterAgent"):
-                test_cases = self.tester_agent.generate_test_cases(problem_statement)
+            with ProgressIndicator("Generating small + adversarial test cases with TesterAgent"):
+                # Prefer combined generation if available
+                if hasattr(self.tester_agent, 'generate_combined_test_cases'):
+                    test_cases = self.tester_agent.generate_combined_test_cases(problem_statement)
+                else:
+                    test_cases = self.tester_agent.generate_test_cases(problem_statement)
+
+            # Write to input file
             with open(self.files['test_inputs'], 'w') as f:
                 f.write(test_cases)
+
+            # Attempt to parse T for logging
+            try:
+                first_line = test_cases.splitlines()[0].strip()
+                t_count = int(first_line)
+                print(f"✓ Generated {t_count} test cases (small + adversarial)")
+            except Exception:
+                print("✓ Generated test cases (could not parse T header)")
+
             metadata['test_cases_generated'] = True
             print(f"✓ Test cases saved to: {self.files['test_inputs']}\n")
         except Exception as e:

@@ -15,7 +15,7 @@ class TesterAgent:
         if model.startswith("models/"):
             model = model.replace("models/", "")
 
-        self.model = ChatGoogleGenerativeAI(model=model, temperature=0.7)
+        self.model = ChatGoogleGenerativeAI(model=model, temperature=0.5)
         self.system_prompt = """You are a test case generation expert for programming problems.
 
 Your task is to generate SMALL, simple test cases that adhere to the input format specified in the problem statement.
@@ -71,3 +71,85 @@ CRITICAL: Output ONLY the raw test input data above, nothing else!
             content = "\n".join(lines).strip()
 
         return content
+
+    # New: Adversarial and high-coverage generation
+    def generate_adversarial_cases(self, problem_statement: str, target_cases: int = 12) -> str:
+        """Generate adversarial, boundary, and tricky cases strictly following the input format.
+
+        The model must output a single input blob beginning with T, followed by exactly T test cases.
+        """
+        adv_system = """You are an expert in adversarial test generation for competitive programming.
+
+Generate a HIGH-COVERAGE set of test cases that strictly matches the input format described in the problem statement.
+
+Rules:
+- Output ONLY valid input, no explanations or markdown
+- First line MUST be T (the number of test cases)
+- Provide exactly T cases with NO blank lines between them unless the format requires
+- Include boundary and tricky patterns: minimums, maximums, all-equal, alternating, sorted, reverse-sorted, random, degenerate edge cases, and stress-shaped small maxima
+- Keep sizes SMALL but diverse so a brute-force solution can run locally
+- Exactly match whitespace specified by the format; avoid trailing spaces
+"""
+
+        adv_user = f"""Generate approximately {target_cases} adversarial test cases for this problem.
+
+Problem statement:
+{problem_statement}
+
+IMPORTANT:
+- Output ONLY the raw test input, nothing else
+- Begin with T on the first line where T equals the number of test cases you provide
+- Do not include any markdown fences
+"""
+
+        messages = [
+            {"role": "system", "content": adv_system},
+            {"role": "user", "content": adv_user}
+        ]
+
+        response = self.model.invoke(messages)
+        content = response.content.strip()
+
+        # Remove accidental markdown blocks
+        if content.startswith("```"):
+            lines = content.split("\n")
+            if lines and lines[0].startswith("```"):
+                lines = lines[1:]
+            if lines and lines[-1].startswith("```"):
+                lines = lines[:-1]
+            content = "\n".join(lines).strip()
+
+        return content
+
+    def generate_combined_test_cases(self, problem_statement: str) -> str:
+        """Generate a combined suite: small + adversarial, with a single T header.
+
+        Strategy:
+        - Generate the regular small cases using the default prompt
+        - Generate adversarial cases using a stricter prompt
+        - Combine by summing T headers and concatenating bodies
+        - No blank lines added
+        """
+        small = self.generate_test_cases(problem_statement)
+        adv = self.generate_adversarial_cases(problem_statement)
+
+        def split_block(block: str):
+            lines = [ln.rstrip() for ln in block.splitlines() if ln is not None]
+            lines = [ln for ln in lines if ln != ""]  # be safe about stray blanks
+            if not lines:
+                return 0, []
+            try:
+                t = int(lines[0].strip())
+                body = lines[1:]
+                return t, body
+            except Exception:
+                # If we can't parse T, treat whole block as one case blob
+                return 1, lines
+
+        t_small, body_small = split_block(small)
+        t_adv, body_adv = split_block(adv)
+
+        total_t = t_small + t_adv
+        combined_lines = [str(total_t)] + body_small + body_adv
+        combined = "\n".join(combined_lines).strip() + "\n"
+        return combined

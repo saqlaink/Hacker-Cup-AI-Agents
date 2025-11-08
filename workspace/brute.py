@@ -2,22 +2,23 @@ def solve():
     N = int(input())
     S = input()
 
-    a_count = S.count('A')
-    b_count = S.count('B')
+    first_B_idx = S.find('B')
+    last_A_idx = S.rfind('A')
 
-    if a_count == 0:
+    if first_B_idx == -1:
+        return "Alice"
+    if last_A_idx == -1:
         return "Bob"
-    if b_count == 0:
+
+    if first_B_idx > last_A_idx:
+        num_A = S.count('A')
+        num_B = S.count('B')
+        if num_A > num_B:
+            return "Alice"
+        else:
+            return "Bob"
+    else:
         return "Alice"
-
-    first_a_idx = S.find('A')
-    last_b_idx = S.rfind('B')
-
-    if first_a_idx > last_b_idx:
-        return "Alice"
-    
-    return "Bob" if (a_count + b_count) % 2 == 0 else "Alice"
-
 
 T = int(input())
 for i in range(1, T + 1):
