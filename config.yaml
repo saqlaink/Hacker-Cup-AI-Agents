@@ -20,6 +20,8 @@ models:
   brute_agent: "google:gemini-2.5-flash"
   optimal_agent: "google:gemini-2.5-flash"
   debugger_agent: "google:gemini-2.5-flash"  # Agent for debugging failed solutions
+  validator_agent: "google:gemini-2.0-flash"  # Agent for validating logic and edge cases
+  complexity_agent: "google:gemini-2.0-flash"  # Agent for analyzing time/space complexity
 
 # Execution Parameters
 execution:

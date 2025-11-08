@@ -3,7 +3,7 @@ import yaml
 import json
 import time
 from typing import Dict, Optional, Tuple, List
-from agents import TesterAgent, BruteAgent, OptimalAgent, DebuggerAgent
+from agents import TesterAgent, BruteAgent, OptimalAgent, DebuggerAgent, ValidatorAgent, ComplexityAgent
 from utils import CodeExecutor, OutputComparator, ProgressIndicator
 
 
@@ -29,6 +29,10 @@ class ProblemSolverOrchestrator:
         self.optimal_agent = OptimalAgent(self.config['models']['optimal_agent'])
         self.debugger_agent = DebuggerAgent(self.config['models'].get('debugger_agent', 
                                                                        self.config['models']['optimal_agent']))
+        self.validator_agent = ValidatorAgent(self.config['models'].get('validator_agent',
+                                                                        self.config['models']['optimal_agent']))
+        self.complexity_agent = ComplexityAgent(self.config['models'].get('complexity_agent',
+                                                                          self.config['models']['optimal_agent']))
 
         # Initialize utilities
         timeout = self.config['execution']['timeout_seconds']
@@ -189,6 +193,98 @@ class ProblemSolverOrchestrator:
                 metadata['optimal_attempts'].append(attempt_data)
                 print(f"✗ {error}")
                 continue
+
+            # ==================== PRE-EXECUTION VALIDATION ====================
+            print("\n--- Pre-Execution Validation ---")
+            
+            # 1. Quick syntactic check
+            with ProgressIndicator("Running quick code checks"):
+                quick_check_result = self.validator_agent.quick_check(optimal_code)
+            
+            if not quick_check_result['passed']:
+                print(f"⚠️ Quick check warnings:")
+                for issue in quick_check_result.get('issues', []):
+                    print(f"  - {issue}")
+            else:
+                print(f"✓ Quick checks passed")
+            
+            # 2. Quick complexity estimate
+            with ProgressIndicator("Estimating complexity"):
+                complexity_est = self.complexity_agent.quick_complexity_estimate(optimal_code)
+            
+            print(f"✓ Estimated time: {complexity_est['time_complexity']}")
+            print(f"✓ Estimated space: {complexity_est['space_complexity']}")
+            
+            if complexity_est['max_loop_depth'] >= 3:
+                print(f"⚠️ Warning: High loop nesting depth ({complexity_est['max_loop_depth']})")
+            
+            # 3. Deep complexity analysis
+            with ProgressIndicator("Analyzing complexity against constraints"):
+                complexity_analysis = self.complexity_agent.analyze_complexity(optimal_code, problem_statement)
+            
+            print(f"✓ Time complexity: {complexity_analysis['time_complexity']}")
+            print(f"✓ Space complexity: {complexity_analysis['space_complexity']}")
+            
+            if not complexity_analysis['will_pass_time']:
+                print(f"⚠️ WARNING: Solution may TLE (Time Limit Exceeded)")
+                for opt in complexity_analysis.get('optimizations', []):
+                    print(f"  Suggestion: {opt}")
+            
+            if not complexity_analysis['will_pass_space']:
+                print(f"⚠️ WARNING: Solution may MLE (Memory Limit Exceeded)")
+            
+            # 4. Deep logical validation
+            with ProgressIndicator("Validating logic and edge cases"):
+                validation_result = self.validator_agent.validate_logic(optimal_code, problem_statement)
+            
+            if not validation_result['passed']:
+                print(f"⚠️ Logic validation found issues (confidence: {validation_result.get('confidence', 0):.1%}):")
+                for issue in validation_result.get('issues', []):
+                    print(f"  - {issue}")
+                for suggestion in validation_result.get('suggestions', []):
+                    print(f"  → {suggestion}")
+            else:
+                print(f"✓ Logic validation passed (confidence: {validation_result.get('confidence', 0):.1%})")
+            
+            # Store validation metadata
+            attempt_data['validation'] = {
+                'quick_check': quick_check_result,
+                'complexity_estimate': complexity_est,
+                'complexity_analysis': complexity_analysis,
+                'logic_validation': validation_result
+            }
+            
+            # Provide combined feedback if critical issues found
+            critical_issues = []
+            if not quick_check_result['passed'] and quick_check_result.get('severity') == 'critical':
+                critical_issues.extend(quick_check_result.get('issues', []))
+            if not complexity_analysis['will_pass']:
+                critical_issues.append(f"Complexity issue: {complexity_analysis['time_complexity']}")
+            if not validation_result['passed'] and validation_result.get('confidence', 0) > 0.7:
+                critical_issues.extend(validation_result.get('issues', []))
+            
+            if critical_issues and attempt < self.max_attempts:
+                print(f"\n⚠️ Critical issues detected. Consider fixing before execution.")
+                validation_feedback = "Pre-execution validation found critical issues:\n\n"
+                for issue in critical_issues:
+                    validation_feedback += f"- {issue}\n"
+                
+                if complexity_analysis.get('optimizations'):
+                    validation_feedback += "\nOptimization suggestions:\n"
+                    for opt in complexity_analysis.get('optimizations', []):
+                        validation_feedback += f"- {opt}\n"
+                
+                if validation_result.get('suggestions'):
+                    validation_feedback += "\nLogic improvements:\n"
+                    for sugg in validation_result.get('suggestions', []):
+                        validation_feedback += f"- {sugg}\n"
+                
+                # Let user decide whether to proceed or regenerate
+                # For now, proceed with execution but pass feedback for next iteration
+                feedback = validation_feedback + "\n\n" + (feedback or "")
+            
+            print("=" * 60)
+            # ==================== END VALIDATION ====================
 
             # Execute optimal solution
             attempt_output_file = os.path.join(self.workspace, f'optimal_attempt_{attempt}_output.txt')
@@ -362,7 +458,8 @@ Please fix the logic based on this analysis."""
             'brute_force_code': brute_code,
             'optimal_attempts': metadata['optimal_attempts'],
             'success': metadata['optimal_solution_found'],
-            'total_attempts': metadata['attempts']
+            'total_attempts': metadata['attempts'],
+            'has_validation_data': any('validation' in attempt for attempt in metadata['optimal_attempts'])
         }
 
         results_file = os.path.join(self.workspace, 'results.json')

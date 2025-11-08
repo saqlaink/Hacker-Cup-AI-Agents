@@ -1,24 +1,14 @@
 def solve():
     N = int(input())
-    S = input()
+    A = list(map(int, input().split()))
 
-    first_B_idx = S.find('B')
-    last_A_idx = S.rfind('A')
-
-    if first_B_idx == -1:
-        return "Alice"
-    if last_A_idx == -1:
-        return "Bob"
-
-    if first_B_idx > last_A_idx:
-        num_A = S.count('A')
-        num_B = S.count('B')
-        if num_A > num_B:
-            return "Alice"
-        else:
-            return "Bob"
-    else:
-        return "Alice"
+    max_diff = 0
+    for i in range(N - 1):
+        diff = abs(A[i] - A[i+1])
+        if diff > max_diff:
+            max_diff = diff
+    
+    return max_diff
 
 T = int(input())
 for i in range(1, T + 1):
