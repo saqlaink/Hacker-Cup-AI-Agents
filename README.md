@@ -21,6 +21,19 @@ This approach ensures correctness through differential testing while achieving o
 
 ## 🎯 Overview
 
+### Key Features
+
+✅ **Multi-Agent Collaboration** - TesterAgent, BruteAgent, OptimalAgent work together  
+✅ **🆕 WebSearchAgent** - Automatically searches for algorithm hints (DuckDuckGo, free)  
+✅ **Differential Testing** - Validates solutions against brute force output  
+✅ **Iterative Refinement** - Up to 5 attempts with feedback loops  
+✅ **Custom Test Input** - Provide your own test cases or auto-generate  
+✅ **Validation & Complexity Analysis** - ValidatorAgent and ComplexityAgent check solutions  
+✅ **DebuggerAgent** - Advanced debugging with enhanced error analysis  
+✅ **FREE Tier** - Uses Google Gemini (250 requests/day free)  
+✅ **Interactive Viewer** - Beautiful HTML dashboard with all results  
+✅ **Python-Only** - Simplified codebase, easy to extend  
+
 ### Architecture
 
 ![Architecture Diagram](strategy.png)
@@ -50,6 +63,7 @@ This installs:
 - `langchain` - Multi-agent framework
 - `langchain-google-genai` - Google Gemini integration (FREE tier)
 - `pyyaml` - Configuration management
+- `ddgs` - Free web search for algorithm hints (DuckDuckGo)
 
 ### Step 3: Get FREE API Key
 
@@ -97,6 +111,8 @@ Check https://ai.google.dev/gemini-api/docs/rate-limits for latest rate limits a
 execution:
   max_optimal_attempts: 5      # Maximum retry attempts
   timeout_seconds: 30          # Code execution timeout
+  enable_web_search: true      # Enable web search for algorithm hints (free)
+  custom_test_input: null      # Path to custom test file (null = auto-generate)
 ```
 
 ### Customize Output Directory
@@ -147,12 +163,14 @@ python main.py
 **What Happens:**
 
 1. **Loads Problem** - Reads `PROBLEM.txt`
-2. **Generates Test Cases** - TesterAgent creates 3-5 small test inputs
-3. **Creates Brute Force** - BruteAgent generates a correct O(n²-n³) solution
-4. **Executes Brute Force** - Saves expected outputs
-5. **Optimizes Solution** - OptimalAgent attempts efficient O(n) solution
-6. **Validates & Retries** - Compares outputs, retries with feedback if needed
-7. **Saves Results** - Generates `workspace/results.json` for the viewer
+2. **Generates Test Cases** - TesterAgent creates 3-5 small test inputs (or loads custom tests)
+3. **🆕 Searches for Hints** - WebSearchAgent finds algorithm resources (codeforces, leetcode, etc.)
+4. **Creates Brute Force** - BruteAgent generates a correct O(n²-n³) solution
+5. **Executes Brute Force** - Saves expected outputs
+6. **Optimizes Solution** - OptimalAgent attempts efficient O(n) solution with web hints
+7. **Validates & Retries** - Compares outputs, retries with feedback if needed
+8. **Analyzes Complexity** - ComplexityAgent estimates time/space complexity
+9. **Saves Results** - Generates `workspace/results.json` for the viewer
 
 **Live Progress Indicators:**
 
@@ -206,12 +224,17 @@ temp-agents/
 ├── requirements.txt              # Python dependencies
 ├── README.md                     # This file
 ├── QUICKSTART.md                 # Quick reference guide
+├── WEBSEARCH_FEATURE.md          # 🆕 WebSearchAgent documentation
 ├── LICENSE                       # MIT License
 ├── agents/
 │   ├── __init__.py
 │   ├── tester_agent.py          # Test case generator
 │   ├── brute_agent.py           # Brute force solution generator
-│   └── optimal_agent.py         # Optimal solution generator
+│   ├── optimal_agent.py         # Optimal solution generator
+│   ├── debugger_agent.py        # Solution debugger
+│   ├── validator_agent.py       # Logic validator
+│   ├── complexity_agent.py      # Complexity analyzer
+│   └── web_search_agent.py      # 🆕 Web search for algorithm hints
 ├── utils/
 │   ├── __init__.py
 │   ├── executor.py              # Code execution utility

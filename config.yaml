@@ -4,7 +4,8 @@
 api_keys:
   # Google Gemini API Key - FREE TIER AVAILABLE!
   # Get yours at: https://aistudio.google.com/app/apikey
-  google: "AIzaSyAygVqJesC_1ctwOzP7PODQh-8rH_m_DAk"
+  # Load from environment to avoid committing secrets; set in .env as GOOGLE_API_KEY
+  google: "${GOOGLE_API_KEY}"
 
 # Model Configuration for Each Agent
 # FORMAT: "google:model-name"
@@ -28,6 +29,7 @@ execution:
   max_optimal_attempts: 5
   timeout_seconds: 30 # Timeout for code execution
   custom_test_input: null  # Path to custom test input file (null to auto-generate with TesterAgent)
+  enable_web_search: true  # Enable web search for algorithm hints (uses free DuckDuckGo API)
 
 # Output Configuration
 output:

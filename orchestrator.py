@@ -3,8 +3,9 @@ import yaml
 import json
 import time
 from typing import Dict, Optional, Tuple, List
-from agents import TesterAgent, BruteAgent, OptimalAgent, DebuggerAgent, ValidatorAgent, ComplexityAgent
+from agents import TesterAgent, BruteAgent, OptimalAgent, DebuggerAgent, ValidatorAgent, ComplexityAgent, WebSearchAgent
 from utils import CodeExecutor, OutputComparator, ProgressIndicator
+from dotenv import load_dotenv
 
 
 class ProblemSolverOrchestrator:
@@ -12,15 +13,30 @@ class ProblemSolverOrchestrator:
 
     def __init__(self, config_path: str = "config.yaml"):
         """Initialize orchestrator with configuration."""
+        # Load environment variables from .env if present
+        load_dotenv()
         with open(config_path, 'r') as f:
             self.config = yaml.safe_load(f)
 
         # Set up API key
         api_keys = self.config.get('api_keys', {})
 
-        # Google API key for Gemini
-        google_key = api_keys.get('google')
-        if google_key and google_key != "your-google-api-key-here":
+        # Google API key for Gemini: resolve from env or expand placeholders like ${GOOGLE_API_KEY}
+        raw_google_key = api_keys.get('google')
+        google_key = None
+        if isinstance(raw_google_key, str):
+            try:
+                # Expand env var placeholders
+                expanded = os.path.expandvars(raw_google_key).strip()
+                if expanded and expanded != raw_google_key:
+                    google_key = expanded
+            except Exception:
+                pass
+        # Fallback to direct env var if not expanded
+        if not google_key:
+            google_key = os.getenv('GOOGLE_API_KEY')
+        # Set into environment for downstream libraries
+        if google_key:
             os.environ['GOOGLE_API_KEY'] = google_key
 
         # Initialize agents
@@ -33,6 +49,7 @@ class ProblemSolverOrchestrator:
                                                                         self.config['models']['optimal_agent']))
         self.complexity_agent = ComplexityAgent(self.config['models'].get('complexity_agent',
                                                                           self.config['models']['optimal_agent']))
+        self.web_search_agent = WebSearchAgent()
 
         # Initialize utilities
         timeout = self.config['execution']['timeout_seconds']
@@ -72,7 +89,9 @@ class ProblemSolverOrchestrator:
             'optimal_solution_found': False,
             'errors': [],
             'optimal_attempts': [],  # Store all attempts with details
-            'custom_test_used': False
+            'custom_test_used': False,
+            'web_search_performed': False,
+            'web_hints': None
         }
 
         # Check for custom test input
@@ -143,6 +162,11 @@ class ProblemSolverOrchestrator:
                 print(f"✗ {error}\n")
                 return False, None, metadata
 
+        # Step 1.5: Web search is deferred until after two failed optimal attempts
+        web_hints = None
+        enable_web_search = self.config.get('execution', {}).get('enable_web_search', True)
+        web_search_after_attempts = 2  # Deferred trigger threshold
+
         print("=" * 80)
         print("STEP 2: Generating brute force solution...")
         print("=" * 80)
@@ -203,11 +227,21 @@ class ProblemSolverOrchestrator:
 
             try:
                 with ProgressIndicator(f"Generating optimal solution (attempt {attempt}/{self.max_attempts})"):
-                    optimal_code = self.optimal_agent.generate_solution(
-                        problem_statement,
-                        feedback=feedback,
-                        attempt=attempt
-                    )
+                    # Include web hints if they were fetched after earlier failed attempts
+                    if web_hints:
+                        enhanced_problem = f"{problem_statement}\n\n{web_hints}"
+                        optimal_code = self.optimal_agent.generate_solution(
+                            enhanced_problem,
+                            feedback=feedback,
+                            attempt=attempt
+                        )
+                    else:
+                        # Normal generation with feedback
+                        optimal_code = self.optimal_agent.generate_solution(
+                            problem_statement,
+                            feedback=feedback,
+                            attempt=attempt
+                        )
 
                 attempt_data['code'] = optimal_code
 
@@ -345,6 +379,24 @@ class ProblemSolverOrchestrator:
                 metadata['optimal_attempts'].append(attempt_data)
                 feedback = f"Your solution failed to execute:\n{error}\n\nPlease fix the errors."
                 metadata['errors'].append(f"Attempt {attempt}: Execution failed - {error}")
+                # Trigger web search after N failed attempts (once)
+                if enable_web_search and not metadata.get('web_search_performed') and attempt >= web_search_after_attempts:
+                    print("\n" + "=" * 80)
+                    print("WEB SEARCH: Fetching algorithm hints after repeated failures...")
+                    print("=" * 80)
+                    try:
+                        with ProgressIndicator("Searching for algorithm hints with WebSearchAgent"):
+                            search_results = self.web_search_agent.search_algorithm_hints(problem_statement)
+                            if search_results:
+                                web_hints = self.web_search_agent.extract_hints(search_results)
+                                metadata['web_search_performed'] = True
+                                metadata['web_hints'] = web_hints
+                                print(f"✓ Found {len(search_results)} relevant resources")
+                                print(f"✓ Algorithm hints will be provided to subsequent attempts\n")
+                            else:
+                                print("✓ No relevant algorithm hints found (will proceed normally)\n")
+                    except Exception as e:
+                        print(f"⚠ Web search failed: {str(e)} (continuing without hints)\n")
                 continue
 
             attempt_data['execution_success'] = True
@@ -453,6 +505,25 @@ Please fix the logic based on this analysis."""
                 attempt_data['output_diff'] = diff
                 metadata['optimal_attempts'].append(attempt_data)
                 metadata['errors'].append(f"Attempt {attempt}: Output mismatch")
+
+                # Trigger web search after N failed attempts (once)
+                if enable_web_search and not metadata.get('web_search_performed') and attempt >= web_search_after_attempts:
+                    print("\n" + "=" * 80)
+                    print("WEB SEARCH: Fetching algorithm hints after repeated failures...")
+                    print("=" * 80)
+                    try:
+                        with ProgressIndicator("Searching for algorithm hints with WebSearchAgent"):
+                            search_results = self.web_search_agent.search_algorithm_hints(problem_statement)
+                            if search_results:
+                                web_hints = self.web_search_agent.extract_hints(search_results)
+                                metadata['web_search_performed'] = True
+                                metadata['web_hints'] = web_hints
+                                print(f"✓ Found {len(search_results)} relevant resources")
+                                print(f"✓ Algorithm hints will be provided to subsequent attempts\n")
+                            else:
+                                print("✓ No relevant algorithm hints found (will proceed normally)\n")
+                    except Exception as e:
+                        print(f"⚠ Web search failed: {str(e)} (continuing without hints)\n")
 
         print("\n" + "=" * 80)
         print(f"FAILED: Could not find correct solution in {self.max_attempts} attempts")
