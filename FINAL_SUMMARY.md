@@ -3,9 +3,13 @@
 ## ✅ Completed Features
 
 ### 1. Multi-Agent System
-- **TesterAgent**: Generates 3-5 small test cases
+- **TesterAgent**: Generates 3-5 small test cases (including adversarial cases)
 - **BruteAgent**: Creates brute force O(n²-n³) solutions
 - **OptimalAgent**: Generates efficient O(n) solutions with retry logic
+- **DebuggerAgent**: Instruments failing solutions and analyzes execution traces
+- **ValidatorAgent**: Performs logical and structural validation (quick_check, validate_logic)
+- **ComplexityAgent**: Analyzes time/space complexity and provides optimization suggestions
+- **WebSearchAgent**: Searches for algorithm hints (deferred until after 2 failed attempts) 🆕
 
 ### 2. Complete Attempt Tracking
 - All optimal attempts saved separately (`optimal_attempt_1.py`, etc.)
@@ -31,7 +35,27 @@
   - `google:gemini-2.5-flash-lite` (1000 requests/day)
   - `google:gemini-2.5-pro` (100 requests/day)
 
-### 5. Configuration System
+### 5. Environment-Based Configuration 🆕
+- API keys loaded from `.env` file (never commit secrets!)
+- `python-dotenv` integration for secure credential management
+- Placeholder expansion: `${GOOGLE_API_KEY}` in config.yaml
+- `.gitignore` pre-configured to exclude `.env`
+
+### 6. Deferred Web Search Strategy 🆕
+- Web search triggered **only after 2 failed optimal attempts**
+- Reduces noise and token usage on easy problems
+- Provides algorithm hints when progress stalls
+- Single search per run (idempotent)
+- Free DuckDuckGo API (no rate limits)
+
+### 7. Pre-Execution Validation 🆕
+- **Quick Check**: Syntactic and style issues
+- **Complexity Estimate**: Structural heuristics for time/space
+- **Deep Complexity Analysis**: Pass/fail prognostics with optimization suggestions
+- **Logic Validation**: Edge case detection and confidence scoring
+- Feedback synthesis for iterative improvement
+
+### 8. Configuration System
 - YAML-based config file
 - Google Gemini API key configuration
 - Model selection per agent
@@ -42,38 +66,53 @@
 
 ```
 temp-agents/
-├── config.yaml                      # ✅ Multi-provider config
+├── config.yaml                      # ✅ Multi-provider config (uses .env)
+├── .env                             # 🆕 Environment variables (gitignored)
+├── .gitignore                       # 🆕 Excludes secrets and cache
 ├── main.py                          # ✅ Entry point (UTF-8 fixed)
-├── orchestrator.py                  # ✅ Multi-key orchestrator
+├── orchestrator.py                  # ✅ Multi-key orchestrator with deferred web search
 ├── viewer.html                      # ✅ Full-featured web viewer
-├── requirements.txt                 # ✅ Gemini support added
+├── requirements.txt                 # ✅ Gemini + dotenv support added
 ├── README.md                        # ✅ Comprehensive docs
 ├── QUICKSTART.md                    # ✅ Quick reference
 ├── SETUP_GEMINI.md                  # ✅ Gemini setup guide
 ├── GEMINI_INTEGRATION.md            # ✅ Integration details
+├── WEBSEARCH_FEATURE.md             # ✅ Web search documentation
+├── DEBUGGER_FEATURE.md              # ✅ Debugger agent documentation
+├── PROJECT_OVERVIEW.md              # 🆕 Comprehensive architecture & workflow doc
 ├── FINAL_SUMMARY.md                 # ✅ This file
 ├── SUMMARY.md                       # ✅ Original summary
-├── .gitignore                       # ✅ Workspace excluded
+├── test_web_search.py               # 🆕 Web search tests (includes deferred trigger test)
+├── test_debugger.py                 # ✅ Debugger tests
 ├── agents/
 │   ├── __init__.py                  # ✅ Exports
 │   ├── tester_agent.py             # ✅ Multi-provider support
 │   ├── brute_agent.py              # ✅ Multi-provider support
-│   └── optimal_agent.py            # ✅ Multi-provider support
+│   ├── optimal_agent.py            # ✅ Multi-provider support
+│   ├── debugger_agent.py           # ✅ Debug instrumentation & analysis
+│   ├── validator_agent.py          # 🆕 Logic validation agent
+│   ├── complexity_agent.py         # 🆕 Complexity analysis agent
+│   └── web_search_agent.py         # 🆕 DuckDuckGo web search (deferred)
 ├── utils/
 │   ├── __init__.py                  # ✅ Exports
-│   ├── executor.py                 # ✅ Code execution
-│   └── comparator.py               # ✅ Output comparison
+│   ├── executor.py                 # ✅ Code execution (with debug capture)
+│   ├── comparator.py               # ✅ Output comparison
+│   ├── progress.py                 # 🆕 Live progress indicators
+│   └── validator.py                # 🆕 Additional validation utilities
 └── workspace/                       # ✅ Generated files
     ├── small_inputs.txt            # Test cases
     ├── brute.py                    # Brute force code
     ├── small_outputs.txt           # Expected output
     ├── optimal_attempt_1.py        # First attempt
     ├── optimal_attempt_1_output.txt
+    ├── optimal_attempt_1_debug.py  # 🆕 Instrumented version (if failed)
+    ├── optimal_attempt_1_debug_output.txt  # 🆕 Debug trace
     ├── optimal_attempt_2.py        # Second attempt (if needed)
     ├── optimal_attempt_2_output.txt
-    ├── ...                         # Up to 10 attempts
+    ├── ...                         # Up to 5 attempts (configurable)
     ├── optimal.py                  # Final solution
-    └── results.json                # Complete viewer data
+    ├── op.txt                      # Final output
+    └── results.json                # Complete viewer data (includes validation)
 ```
 
 ## 🚀 Quick Start
@@ -87,14 +126,24 @@ temp-agents/
 # 2. Install dependencies
 pip install -r requirements.txt
 
-# 3. Configure (in config.yaml)
+# 3. Configure via .env (recommended)
+# Create .env file:
+echo "GOOGLE_API_KEY=AIza...your-key-here" > .env
+
+# OR configure in config.yaml:
 api_keys:
-  google: "AIza...your-key-here"
+  google: "${GOOGLE_API_KEY}"  # Reads from environment
 
 models:
   tester_agent: "google:gemini-2.5-flash"
   brute_agent: "google:gemini-2.5-flash"
   optimal_agent: "google:gemini-2.5-flash"
+  debugger_agent: "google:gemini-2.5-flash"
+  validator_agent: "google:gemini-2.0-flash"
+  complexity_agent: "google:gemini-2.0-flash"
+
+execution:
+  enable_web_search: true  # Deferred until 2 failures
 
 # 4. Run solver
 python main.py
@@ -107,16 +156,19 @@ python -m http.server 8000
 ## 🎯 What It Does
 
 1. **Input**: Problem statement (max subarray sum example included)
-2. **TesterAgent**: Generates 5 small test cases
+2. **TesterAgent**: Generates 3-5 small test cases (including adversarial)
 3. **BruteAgent**: Creates O(n³) correct brute force solution
 4. **Execute Brute**: Run brute force to get expected outputs
-5. **OptimalAgent Loop** (max 10 attempts):
+5. **OptimalAgent Loop** (max 5 attempts by default):
+   - **Pre-Execution Validation**: Quick check, complexity estimate, logic validation
    - Generate optimal O(n) solution
+   - (Deferred) **Web Search**: After 2 failures, fetch algorithm hints from web
    - Execute and compare output
-   - If wrong, provide feedback and retry
+   - If wrong, **DebuggerAgent** instruments code and analyzes trace
+   - Provide enhanced feedback and retry
    - If correct, stop and save all attempts
-6. **Results Export**: Generate `results.json` with all metadata
-7. **Web Viewer**: Beautiful UI to explore all attempts
+6. **Results Export**: Generate `results.json` with all metadata (including validation data)
+7. **Web Viewer**: Beautiful UI to explore all attempts with validation insights
 
 ## 📊 Success Metrics
 
@@ -132,6 +184,9 @@ python -m http.server 8000
 - ✅ Multi-provider model support
 - ✅ Gemini integration
 - ✅ CORS issues (use HTTP server)
+- ✅ Web search deferred until 2 failures
+- ✅ Environment-based API key management
+- ✅ Mock data structure for testing
 
 ## 💰 Cost
 
@@ -155,11 +210,15 @@ Status: ✅ Solved
 Total Attempts: 1
 Success Rate: 100%
 Accepted Solutions: 1
+Validation Data: Available 🆕
 ```
 
 ### Attempt Display (Reverse Order)
 ```
 ┌─ Attempt 1 ─────────────────── [ACCEPTED] ─┐
+│                                              │
+│  Pre-Execution Validation: ✓ Passed         │
+│  Complexity: O(n) time, O(1) space          │
 │                                              │
 │  def max_subarray_sum():                    │
 │      # Kadane's Algorithm                   │
@@ -185,10 +244,20 @@ Accepted Solutions: 1
 
 ### Standard (Recommended)
 ```yaml
+api_keys:
+  google: "${GOOGLE_API_KEY}"  # Loaded from .env
+
 models:
   tester_agent: "google:gemini-2.5-flash"
   brute_agent: "google:gemini-2.5-flash"
   optimal_agent: "google:gemini-2.5-flash"
+  debugger_agent: "google:gemini-2.5-flash"
+  validator_agent: "google:gemini-2.0-flash"
+  complexity_agent: "google:gemini-2.0-flash"
+
+execution:
+  max_optimal_attempts: 5
+  enable_web_search: true  # Deferred until 2 failures
 ```
 
 ### High Volume Testing
@@ -213,17 +282,24 @@ models:
 2. **QUICKSTART.md** - Get started in 5 minutes
 3. **SETUP_GEMINI.md** - Complete Gemini setup guide
 4. **GEMINI_INTEGRATION.md** - Technical integration details
-5. **SUMMARY.md** - Original project summary
-6. **FINAL_SUMMARY.md** - This file
+5. **WEBSEARCH_FEATURE.md** - Web search documentation (deferred trigger strategy)
+6. **DEBUGGER_FEATURE.md** - Debug instrumentation guide
+7. **PROJECT_OVERVIEW.md** - Architecture & workflow deep dive 🆕
+8. **SUMMARY.md** - Original project summary
+9. **FINAL_SUMMARY.md** - This file
 
 ## ✨ Key Innovations
 
-1. **Multi-Agent Architecture**: Three specialized agents working together
+1. **Multi-Agent Architecture**: Seven specialized agents working together
 2. **Feedback Loop**: OptimalAgent gets detailed feedback from failures
 3. **Complete History**: All attempts preserved, not just final solution
 4. **Beautiful Viewer**: Professional web UI with LaTeX and syntax highlighting
 5. **FREE Support**: Gemini integration makes it accessible to everyone
 6. **Flexible Configuration**: Mix and match providers per agent
+7. **Deferred Web Search**: Intelligent hint retrieval after 2 failures 🆕
+8. **Pre-Execution Validation**: Complexity + logic checks before running 🆕
+9. **Debug Instrumentation**: Automatic trace analysis for failures 🆕
+10. **Environment-Based Secrets**: Secure API key management via .env 🆕
 
 ## 🎯 Use Cases
 
@@ -236,13 +312,15 @@ models:
 ## 🔮 Future Enhancements (Optional)
 
 1. **More Problems**: Support for different problem types
-2. **Custom Tests**: User-provided test cases
+2. **Custom Tests**: User-provided test cases (already supported via config)
 3. **Metrics**: Execution time, memory usage
-4. **Analysis**: Complexity analysis display
+4. **Analysis**: Complexity analysis display in viewer
 5. **Export**: Download attempts as ZIP
 6. **Comparison**: Side-by-side brute vs optimal
 7. **Scaling**: Larger test sets
 8. **Categories**: Verdict subcategories
+9. **Configurable Web Search Threshold**: Make the "2 attempts" threshold a config option
+10. **Multi-Language Support**: C++, Java, Rust execution
 
 ## ✅ Testing Checklist
 
@@ -258,21 +336,31 @@ models:
 - [x] Gemini integration complete
 - [x] Configuration flexible
 - [x] Documentation comprehensive
+- [x] DebuggerAgent instrumentation working
+- [x] ValidatorAgent logic checks operational
+- [x] ComplexityAgent analysis accurate
+- [x] WebSearchAgent deferred trigger correct
+- [x] Environment-based API key loading
+- [x] Test suite passing (test_web_search.py)
 
 ## 🎉 Project Status
 
 **COMPLETE AND READY FOR PRODUCTION!**
 
 ### What Works
-✅ Three specialized LLM agents
-✅ Iterative refinement with feedback
-✅ Complete attempt history tracking
+✅ Seven specialized LLM agents (Tester, Brute, Optimal, Debugger, Validator, Complexity, WebSearch)
+✅ Iterative refinement with enhanced feedback
+✅ Complete attempt history tracking with validation metadata
 ✅ Beautiful web-based results viewer
 ✅ LaTeX & syntax highlighting
 ✅ Interactive diff comparison
 ✅ Google Gemini support (FREE tier)
-✅ Comprehensive documentation
-✅ Tested and verified
+✅ Comprehensive documentation (9 markdown files)
+✅ Tested and verified (test suite passing)
+✅ Deferred web search (after 2 failures)
+✅ Environment-based secrets management
+✅ Pre-execution validation pipeline
+✅ Debug instrumentation and trace analysis
 
 ### Default Configuration
 - **Provider**: Google Gemini
@@ -298,6 +386,7 @@ models:
 
 **Built with ❤️ using LangChain and Google Gemini**
 
-**Version**: 2.0 (Gemini Edition)
+**Version**: 3.0 (Enhanced Multi-Agent Edition)
 **Status**: Production Ready
 **License**: MIT
+**Recent Updates**: Deferred web search, environment config, validation pipeline, debug instrumentation

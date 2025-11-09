@@ -1,38 +1,45 @@
-# 🤖 Multi-Agent Meta HackerCup Starter Kit
+# 🤖 Hacker Cup AI Agents - Multi-Agent Problem Solving System
 
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![LangChain](https://img.shields.io/badge/LangChain-0.3+-green.svg)](https://python.langchain.com/)
 [![Google Gemini](https://img.shields.io/badge/Gemini-2.5%20Flash-orange.svg)](https://ai.google.dev/)
-[![FlamesBlue](https://img.shields.io/badge/FlamesBlue-v1-red.svg)](https://www.flamesblue.com)
 
-A multi-agent AI system that collaboratively solves competitive programming problems using iterative refinement with brute-force validation.
+An advanced multi-agent AI system designed to solve competitive programming problems through intelligent collaboration, iterative refinement, and comprehensive validation.
 
 ## 📖 Description
 
-**Multi-Agent Programming Problem Solver** was originally developed as a **starter kit for Meta Hacker Cup** and similar competitive programming contests. It demonstrates a sample strategy that contestants can experiment with and build upon.
+**Hacker Cup AI Agents** is a production-ready competitive programming assistant built on Meta's Hacker Cup AI Starter Kit. This enhanced implementation features seven specialized AI agents that work collaboratively to solve algorithmic challenges with unprecedented reliability and insight.
 
-The system employs three specialized AI agents working in concert:
-- **TesterAgent** generates small test cases
-- **BruteAgent** creates a correct but inefficient solution
-- **OptimalAgent** iteratively develops an efficient solution, validated against the brute force output
+**Based on**: Meta Hacker Cup AI Starter Kit  
+**Enhanced by**: AlgoUniversity Team
 
-This approach ensures correctness through differential testing while achieving optimal time complexity through AI-guided iteration.
+The system employs seven specialized AI agents working in concert:
+- **TesterAgent** - Generates comprehensive test cases including adversarial scenarios
+- **BruteAgent** - Creates guaranteed-correct reference solutions
+- **OptimalAgent** - Iteratively develops efficient solutions with feedback learning
+- **DebuggerAgent** - Instruments failing code and performs trace analysis
+- **ValidatorAgent** - Validates logic, detects edge cases, provides confidence scoring
+- **ComplexityAgent** - Analyzes time/space complexity with optimization suggestions
+- **WebSearchAgent** - Intelligently searches for algorithm hints (deferred until needed)
+
+This approach ensures correctness through differential testing, achieves optimal performance through AI-guided iteration, and provides deep introspection through validation and debugging pipelines.
 
 ## 🎯 Overview
 
 ### Key Features
 
-✅ **Multi-Agent Collaboration** - TesterAgent, BruteAgent, OptimalAgent work together  
-✅ **🆕 WebSearchAgent** - Automatically searches for algorithm hints (DuckDuckGo, free)  
-✅ **Differential Testing** - Validates solutions against brute force output  
-✅ **Iterative Refinement** - Up to 5 attempts with feedback loops  
+✅ **Seven Specialized Agents** - TesterAgent, BruteAgent, OptimalAgent, DebuggerAgent, ValidatorAgent, ComplexityAgent, WebSearchAgent  
+✅ **Deferred Web Search** - Intelligently searches for algorithm hints after 2 failed attempts (DuckDuckGo, free)  
+✅ **Differential Testing** - Validates solutions against brute force baseline  
+✅ **Iterative Refinement** - Up to 5 configurable attempts with enhanced feedback loops  
+✅ **Pre-Execution Validation** - Complexity analysis and logic validation before running code  
+✅ **Debug Instrumentation** - Automatic trace analysis for failing solutions  
 ✅ **Custom Test Input** - Provide your own test cases or auto-generate  
-✅ **Validation & Complexity Analysis** - ValidatorAgent and ComplexityAgent check solutions  
-✅ **DebuggerAgent** - Advanced debugging with enhanced error analysis  
+✅ **Environment-Based Configuration** - Secure API key management via .env files  
 ✅ **FREE Tier** - Uses Google Gemini (250 requests/day free)  
-✅ **Interactive Viewer** - Beautiful HTML dashboard with all results  
-✅ **Python-Only** - Simplified codebase, easy to extend  
+✅ **Interactive Viewer** - Beautiful HTML dashboard with comprehensive results  
+✅ **Python-Only** - Clean codebase, extensively documented, easy to extend  
 
 ### Architecture
 
@@ -49,8 +56,8 @@ This approach ensures correctness through differential testing while achieving o
 ### Step 1: Clone the Repository
 
 ```bash
-git clone <repository-url>
-cd temp-agents
+git clone https://github.com/saqlaink/Hacker-Cup-AI-Agents.git
+cd Hacker-Cup-AI-Agents
 ```
 
 ### Step 2: Install Dependencies
@@ -60,40 +67,73 @@ pip install -r requirements.txt
 ```
 
 This installs:
-- `langchain` - Multi-agent framework
+- `langchain` - Multi-agent orchestration framework
 - `langchain-google-genai` - Google Gemini integration (FREE tier)
 - `pyyaml` - Configuration management
 - `ddgs` - Free web search for algorithm hints (DuckDuckGo)
+- `python-dotenv` - Environment variable management for secure API keys
 
-### Step 3: Get FREE API Key
+### Step 3: Configure Environment
 
-**Google Gemini (FREE)**
+Create a `.env` file for secure API key storage:
+
+```bash
+cp .env .env.local  # Or create new .env file
+```
+
+Edit `.env`:
+
+```
+GOOGLE_API_KEY=your-actual-api-key-here
+```
+
+**Get FREE API Key:**
 
 1. Visit: https://aistudio.google.com/app/apikey
 2. Click "Create API Key"
 3. Copy the generated key (starts with `AIza...`)
+4. Paste into `.env` file
+
+> ⚠️ **Security Note**: Never commit `.env` to version control. The file is already in `.gitignore`.
 
 ## ⚙️ Configuration
 
-### Set API Key
+### API Key Configuration
+
+The system loads API keys from environment variables for security.
 
 Edit `config.yaml`:
 
 ```yaml
 api_keys:
-  # Google Gemini API Key - FREE TIER AVAILABLE!
-  google: "AIza...your-google-api-key"
+  # Loaded from environment variable via .env file
+  google: "${GOOGLE_API_KEY}"
+```
+
+Alternatively, set directly in your shell:
+
+```bash
+export GOOGLE_API_KEY="your-api-key"
 ```
 
 ### Choose Models
 
-The system uses **FREE** Google Gemini models. Default configuration:
+The system uses **FREE** Google Gemini models. Enhanced configuration with all agents:
 
 ```yaml
 models:
   tester_agent: "google:gemini-2.5-flash"
   brute_agent: "google:gemini-2.5-flash"
   optimal_agent: "google:gemini-2.5-flash"
+  debugger_agent: "google:gemini-2.5-flash"
+  validator_agent: "google:gemini-2.0-flash"
+  complexity_agent: "google:gemini-2.0-flash"
+
+execution:
+  max_optimal_attempts: 5
+  timeout_seconds: 30
+  custom_test_input: null
+  enable_web_search: true  # Deferred until 2 failures
 ```
 
 #### Available Google Gemini Models (FREE Tier)
@@ -164,13 +204,14 @@ python main.py
 
 1. **Loads Problem** - Reads `PROBLEM.txt`
 2. **Generates Test Cases** - TesterAgent creates 3-5 small test inputs (or loads custom tests)
-3. **🆕 Searches for Hints** - WebSearchAgent finds algorithm resources (codeforces, leetcode, etc.)
-4. **Creates Brute Force** - BruteAgent generates a correct O(n²-n³) solution
-5. **Executes Brute Force** - Saves expected outputs
-6. **Optimizes Solution** - OptimalAgent attempts efficient O(n) solution with web hints
-7. **Validates & Retries** - Compares outputs, retries with feedback if needed
-8. **Analyzes Complexity** - ComplexityAgent estimates time/space complexity
-9. **Saves Results** - Generates `workspace/results.json` for the viewer
+3. **Creates Brute Force** - BruteAgent generates a correct O(n²-n³) solution
+4. **Executes Brute Force** - Saves expected outputs
+5. **Optimizes Solution** - OptimalAgent attempts efficient O(n) solution
+6. **Pre-Execution Validation** - ValidatorAgent and ComplexityAgent check solution quality
+7. **(Deferred) Web Search** - After 2 failures, WebSearchAgent finds algorithm hints
+8. **Debug Analysis** - On failures, DebuggerAgent instruments code and analyzes traces
+9. **Validates & Retries** - Compares outputs, retries with enhanced feedback if needed
+10. **Saves Results** - Generates `workspace/results.json` for the viewer
 
 **Live Progress Indicators:**
 
@@ -198,16 +239,22 @@ Then open: http://localhost:8000/viewer.html
 All files saved to `workspace/` (configurable):
 
 ```
+```
 workspace/
 ├── small_inputs.txt              # Generated test cases
 ├── small_outputs.txt             # Expected outputs (from brute force)
 ├── brute.py                      # Brute force solution
 ├── optimal_attempt_1.py          # First attempt at optimal solution
 ├── optimal_attempt_1_output.txt  # Output from first attempt
+├── optimal_attempt_1_debug.py    # Instrumented version (if failed)
+├── optimal_attempt_1_debug_output.txt  # Debug trace
 ├── optimal_attempt_2.py          # Second attempt (if needed)
 ├── optimal_attempt_2_output.txt
-├── ...                           # Up to 10 attempts
+├── ...                           # Up to 5 attempts (configurable)
 ├── optimal.py                    # Final solution
+├── op.txt                        # Final output
+└── results.json                  # Complete metadata for viewer
+```
 └── results.json                  # Complete metadata for viewer
 ```
 
@@ -215,65 +262,112 @@ workspace/
 ## 📦 Project Structure
 
 ```
-temp-agents/
+Hacker-Cup-AI-Agents/
+├── .env                          # Environment variables (gitignored, create from template)
+├── .gitignore                    # Git exclusions
 ├── PROBLEM.txt                   # Your problem statement (REQUIRED)
 ├── config.yaml                   # Configuration file
 ├── main.py                       # Entry point
-├── orchestrator.py               # Multi-agent coordinator
+├── orchestrator.py               # Multi-agent coordinator with deferred web search
 ├── viewer.html                   # Web-based results viewer
 ├── requirements.txt              # Python dependencies
 ├── README.md                     # This file
 ├── QUICKSTART.md                 # Quick reference guide
-├── WEBSEARCH_FEATURE.md          # 🆕 WebSearchAgent documentation
+├── PROJECT_OVERVIEW.md           # Comprehensive architecture & workflow documentation
+├── WEBSEARCH_FEATURE.md          # WebSearchAgent documentation
+├── DEBUGGER_FEATURE.md           # DebuggerAgent documentation
+├── FINAL_SUMMARY.md              # Complete feature summary
+├── test_web_search.py            # Web search test suite
+├── test_debugger.py              # Debugger test suite
 ├── LICENSE                       # MIT License
 ├── agents/
 │   ├── __init__.py
 │   ├── tester_agent.py          # Test case generator
 │   ├── brute_agent.py           # Brute force solution generator
 │   ├── optimal_agent.py         # Optimal solution generator
-│   ├── debugger_agent.py        # Solution debugger
-│   ├── validator_agent.py       # Logic validator
-│   ├── complexity_agent.py      # Complexity analyzer
-│   └── web_search_agent.py      # 🆕 Web search for algorithm hints
+│   ├── debugger_agent.py        # Solution debugger with trace analysis
+│   ├── validator_agent.py       # Logic validator with confidence scoring
+│   ├── complexity_agent.py      # Complexity analyzer with optimization suggestions
+│   └── web_search_agent.py      # Web search for algorithm hints (deferred)
 ├── utils/
 │   ├── __init__.py
-│   ├── executor.py              # Code execution utility
+│   ├── executor.py              # Code execution utility with debug capture
 │   ├── comparator.py            # Output comparison utility
-│   └── progress.py              # Live progress indicators
+│   ├── progress.py              # Live progress indicators
+│   └── validator.py             # Additional validation utilities
 └── workspace/                    # Generated files (gitignored)
     └── ...
 ```
 
 ## 🤝 Contributing
 
-Contributions are welcome! This is a starter kit meant to be extended and improved. Ideas on how you can extend it is given in the section below.
+Contributions are welcome! This project builds upon Meta's Hacker Cup AI Starter Kit with significant enhancements. See `PROJECT_OVERVIEW.md` for architecture details.
 
-## 💡 Advanced Tips & Customization for Meta Hacker Cup
+### Ways to Contribute
+- Report bugs or suggest features via GitHub Issues
+- Submit pull requests with improvements
+- Enhance agent prompts and strategies
+- Add support for additional programming languages
+- Improve documentation and examples
 
-- **Add WebSearchAgent** - Allow models to search and learn algorithm approaches on the fly while solving problems
-- **Enhance prompts** - Include problem-specific hints (DP, greedy, graph) and complexity targets in agent system prompts
-- **Create specialized agents** - Add DebugAgent (analyzes failures), ValidatorAgent (checks logic), or ComplexityAgent (estimates time/space)
-- **Provide runtime feedback** - Feed execution time, memory usage, and stack traces to OptimalAgent for faster iteration
-- **Parallel solution generation** - Create multiple approaches (DP, greedy, binary search) simultaneously and pick the fastest correct one
-- **Problem-specific models** - Detect problem type and choose appropriate models (lighter for practice, stronger for competition)
-- **Add support for more programming languages** - Extend beyond Python to support C++, Java, Rust, etc.
-- **Implement parallel test execution** - Run multiple test cases simultaneously for faster validation
-- **Add complexity analysis display** - Show time/space complexity analysis in the viewer
-- **Support for interactive problems** - Handle problems requiring interaction with a judge
-- **Multi-file solutions** - Support projects with multiple modules and dependencies
-- **Custom test case input** - Allow users to provide their own test cases
+## 💡 Advanced Customization Ideas
+
+This system is production-ready but can be extended further:
+
+- **Configurable Web Search Threshold** - Make the "2 attempts" deferred trigger configurable in `config.yaml`
+- **Multi-Language Support** - Add C++, Java, Rust execution and validation
+- **Parallel Attempt Generation** - Create multiple solution approaches simultaneously
+- **Interactive Problems** - Handle problems requiring judge interaction
+- **Complexity Analysis in Viewer** - Display time/space complexity estimates in the web UI
+- **Test Case Amplification** - Auto-generate edge cases based on failure patterns
+- **Semantic Code Diffing** - AST-based comparison for more precise feedback
+- **Execution Metrics** - Track runtime and memory usage per attempt
+- **Multi-File Solutions** - Support projects with dependencies and modules
 
 ## 📄 License
 
 MIT License
 
-Copyright (c) 2025 Nikita Agarwal, Nalin Abrol, Manas Kumar Verma, Nikhil Tadigopulla, Vivek Verma
+Copyright (c) 2025 AlgoUniversity Team
+
+Original Starter Kit: Copyright (c) 2025 Nikita Agarwal, Nalin Abrol, Manas Kumar Verma, Nikhil Tadigopulla, Vivek Verma
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
 in the Software without restriction, including without limitation the rights
 to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+## 🙏 Acknowledgments
+
+### Core Team
+- **AlgoUniversity Team** - Enhanced implementation with 7-agent architecture, deferred web search, validation pipeline, and comprehensive documentation
+
+### Original Starter Kit
+- **Meta Hacker Cup AI Starter Kit** - Original multi-agent framework foundation
+- **Original Authors**: Nikita Agarwal, Nalin Abrol, Manas Kumar Verma, Nikhil Tadigopulla, Vivek Verma
+
+### Technologies
+- **LangChain** - Multi-agent orchestration framework
+- **Google Gemini** - Free and powerful LLM API
+- **DuckDuckGo** - Free web search API
+- **KaTeX** - LaTeX math rendering
+- **Prism.js** - Syntax highlighting
+
+### Inspiration
+- **Meta Hacker Cup** - Competitive programming competition that inspired this project
 furnished to do so, subject to the following conditions:
 
 The above copyright notice and this permission notice shall be included in all
@@ -298,25 +392,18 @@ SOFTWARE.
 
 ## 🔗 Links
 
+- **GitHub Repository**: https://github.com/saqlaink/Hacker-Cup-AI-Agents
 - **Google Gemini API**: https://ai.google.dev/
 - **LangChain Documentation**: https://python.langchain.com/
 - **Meta Hacker Cup**: https://www.facebook.com/codingcompetitions/hacker-cup
-- **FlamesBlue**: https://www.flamesblue.com
+- **Original Starter Kit**: Meta Hacker Cup AI Starter Kit
 
 ---
 
-**Built with ❤️ for the competitive programming community**
+**Built with ❤️ by AlgoUniversity Team**
 
-*Starter kit for Meta Hacker Cup and similar competitions*
+*Enhanced multi-agent competitive programming assistant based on Meta Hacker Cup AI Starter Kit*
 
-## 🌟 Special Shoutout
-
-<p align="center">
-  <a href="https://www.flamesblue.com" target="_blank">
-    <img src="https://www.flamesblue.com/flame-icon.svg" alt="FlamesBlue Logo" width="60" height="60">
-  </a>
-</p>
-
-<p align="center">
-  <strong>Thanks to <a href="https://www.flamesblue.com" target="_blank">FlamesBlue</a> for building the beautiful web viewer!</strong>
-</p>
+**Version**: 3.0  
+**Status**: Production Ready  
+**License**: MIT
