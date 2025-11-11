@@ -30,6 +30,7 @@ execution:
   timeout_seconds: 30 # Timeout for code execution
   custom_test_input: null  # Path to custom test input file (null to auto-generate with TesterAgent)
   enable_web_search: true  # Enable web search for algorithm hints (uses free DuckDuckGo API)
+  web_search_after_attempts: 2  # Deferred web search triggers after N failed optimal attempts
 
 # Output Configuration
 output:

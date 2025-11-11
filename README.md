@@ -12,7 +12,6 @@ An advanced multi-agent AI system designed to solve competitive programming prob
 **Hacker Cup AI Agents** is a production-ready competitive programming assistant built on Meta's Hacker Cup AI Starter Kit. This enhanced implementation features seven specialized AI agents that work collaboratively to solve algorithmic challenges with unprecedented reliability and insight.
 
 **Based on**: Meta Hacker Cup AI Starter Kit  
-**Enhanced by**: AlgoUniversity Team
 
 The system employs seven specialized AI agents working in concert:
 - **TesterAgent** - Generates comprehensive test cases including adversarial scenarios

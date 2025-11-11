@@ -162,10 +162,11 @@ class ProblemSolverOrchestrator:
                 print(f"✗ {error}\n")
                 return False, None, metadata
 
-        # Step 1.5: Web search is deferred until after two failed optimal attempts
+        # Step 1.5: Web search is deferred until after a configurable number of failed attempts
         web_hints = None
-        enable_web_search = self.config.get('execution', {}).get('enable_web_search', True)
-        web_search_after_attempts = 2  # Deferred trigger threshold
+        exec_cfg = self.config.get('execution', {})
+        enable_web_search = exec_cfg.get('enable_web_search', True)
+        web_search_after_attempts = exec_cfg.get('web_search_after_attempts', 2)  # Default to 2
 
         print("=" * 80)
         print("STEP 2: Generating brute force solution...")
